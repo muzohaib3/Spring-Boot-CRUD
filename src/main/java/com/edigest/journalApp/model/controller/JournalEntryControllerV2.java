@@ -4,22 +4,22 @@ import com.edigest.journalApp.model.entity.JournalEntry;
 import com.edigest.journalApp.model.services.JournalEntryService;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/journal")
-public class JournalEntryControllerV2 {
+public class JournalEntryControllerV2
+{
 
     @Autowired
     private JournalEntryService journalEntryService;
 
-    @GetMapping("")
+    @GetMapping
     public List<JournalEntry> getAll(){
         return journalEntryService.getAll() ;
     }
@@ -32,8 +32,12 @@ public class JournalEntryControllerV2 {
     }
 
     @GetMapping("id/{myId}")
-    public JournalEntry getJournalEntryById(@PathVariable ObjectId myId){
-        return journalEntryService.getUserById(myId).orElse(null);
+    public ResponseEntity<JournalEntry> getJournalEntryById(@PathVariable ObjectId myId){
+        Optional<JournalEntry> journalEntry = journalEntryService.getUserById(myId);
+        if (journalEntry.isPresent()){
+            return new ResponseEntity<>(journalEntry.get(), HttpStatus.OK);
+        }
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
     @DeleteMapping("id/{myId}")
@@ -53,4 +57,5 @@ public class JournalEntryControllerV2 {
         journalEntryService.saveEntry(oldEntry);
         return oldEntry;
     }
+
 }
