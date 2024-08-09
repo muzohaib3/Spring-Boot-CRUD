@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -25,14 +24,20 @@ public class JournalEntryControllerV2
     }
 
     @PostMapping
-    public boolean createEntry(@RequestBody JournalEntry myEntry ){
-        myEntry.setTime(LocalDateTime.now());
-        journalEntryService.saveEntry(myEntry);
-        return true;
+    public ResponseEntity<JournalEntry> createEntry(@RequestBody JournalEntry myEntry ){
+        try {
+            myEntry.setTime(LocalDateTime.now());
+            journalEntryService.saveEntry(myEntry);
+            return new ResponseEntity<>(myEntry, HttpStatus.CREATED);
+        }catch (Exception e){
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+
     }
 
     @GetMapping("id/{myId}")
-    public ResponseEntity<JournalEntry> getJournalEntryById(@PathVariable ObjectId myId){
+    public ResponseEntity<JournalEntry> getJournalEntryById(@PathVariable ObjectId myId)
+    {
         Optional<JournalEntry> journalEntry = journalEntryService.getUserById(myId);
         if (journalEntry.isPresent()){
             return new ResponseEntity<>(journalEntry.get(), HttpStatus.OK);
@@ -41,21 +46,23 @@ public class JournalEntryControllerV2
     }
 
     @DeleteMapping("id/{myId}")
-    public boolean deleteEntryById(@PathVariable ObjectId myId){
+    public ResponseEntity<?> deleteEntryById(@PathVariable ObjectId myId){
         journalEntryService.deleteEntryById(myId);
-        return true;
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
     @PutMapping("id/{myId}")
-    public JournalEntry updateById(@PathVariable ObjectId myId, @RequestBody JournalEntry newEntry){
+    public ResponseEntity<JournalEntry> updateById(@PathVariable ObjectId myId, @RequestBody JournalEntry newEntry){
 
         JournalEntry oldEntry = journalEntryService.getUserById(myId).orElse(null);
-        if (oldEntry != null){
+        if (oldEntry != null)
+        {
             oldEntry.setTitle(newEntry.getTitle() != null && !newEntry.getTitle().equals("") ? newEntry.getTitle() : oldEntry.getTitle());
             oldEntry.setContent(newEntry.getContent() != null && !newEntry.getTitle().equals("") ? newEntry.getContent() : oldEntry.getContent());
+            journalEntryService.saveEntry(oldEntry);
+            return new ResponseEntity<>(oldEntry, HttpStatus.OK);
         }
-        journalEntryService.saveEntry(oldEntry);
-        return oldEntry;
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
 }
